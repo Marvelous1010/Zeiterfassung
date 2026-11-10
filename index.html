@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Zeiterfassung">
+<meta name="theme-color" content="#F1F2F4" id="themeColor">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Zeiterfassung</title>
+<style>
+:root{
+  --hg:#F1F2F4;--feld:#FFFFFF;--feld2:#F7F8FA;--rand:#DCE0E5;--tx:#1C2128;--mu:#69707A;
+  --ak:#1F5FBF;--akhg:#EAF1FB;--ok:#1E7D45;--okhg:#EAF5EE;--wa:#A86A00;--wahg:#FFF4DE;--er:#B42335;--erhg:#FBEAEC;
+  --pl:#8A6100;--plhg:#FFF7E3;--ka:#B42335;--knopf:#1F5FBF;--knopftx:#FFFFFF;--aus:#B42335;
+  --sch:0 1px 2px rgba(16,24,40,.05);
+}
+html[data-theme="dark"]{
+  --hg:#111315;--feld:#1C1F23;--feld2:#22262B;--rand:#30353C;--tx:#E8EAED;--mu:#9AA1AB;
+  --ak:#6EA8F5;--akhg:#1C2836;--ok:#6CC28D;--okhg:#17271D;--wa:#E3B04B;--wahg:#2E2615;--er:#EE8383;--erhg:#341C1F;
+  --pl:#E2B65C;--plhg:#2B2416;--ka:#EE8383;--knopf:#4D8FE6;--knopftx:#FFFFFF;--aus:#C9404F;
+  --sch:none;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--hg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.35;-webkit-tap-highlight-color:transparent;min-height:100vh}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,select,textarea{font:inherit;font-size:16px;color:var(--tx)}
+.kopf{position:sticky;top:0;z-index:5;background:var(--hg);padding:calc(env(safe-area-inset-top) + 10px) 18px 8px;border-bottom:1px solid transparent}
+.kopf.schatten{border-bottom-color:var(--rand)}
+.kopf h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.3px}
+.kopf .sub{color:var(--mu);font-size:13.5px;margin-top:1px;min-height:18px}
+main{padding:6px 14px calc(92px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+.card{background:var(--feld);border:1px solid var(--rand);border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--sch)}
+.l{font-size:11.5px;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.u{font-size:13px;color:var(--mu);margin-top:2px}
+.u.wa{color:var(--wa)}.u.er{color:var(--er)}
+.klein{font-size:13px;color:var(--mu)}
+/* Stempeln */
+.stempel .st-k{display:flex;align-items:center;gap:8px;font-size:15px}
+.stempel .st-k b{font-size:17px}
+.punkt{width:10px;height:10px;border-radius:50%;background:var(--ok);display:inline-block;flex-shrink:0;box-shadow:0 0 0 4px var(--okhg)}
+.punkt.aus{background:var(--rand);box-shadow:none}
+.lauf{border-top:3px solid var(--ok)}
+.st-z{display:flex;gap:28px;margin:12px 0 14px}
+.gross{font-size:38px;font-weight:650;letter-spacing:-.5px;line-height:1.05;font-variant-numeric:tabular-nums}
+.gb{display:block;width:100%;height:58px;border-radius:14px;background:var(--knopf);color:var(--knopftx);font-size:18px;font-weight:650;margin-top:12px;letter-spacing:.2px}
+.gb.rot{background:var(--aus)}
+.gb.zweit{background:var(--feld2);color:var(--tx);border:1px solid var(--rand);height:50px;font-size:16px}
+.gb:active{opacity:.85}
+.zeile{display:flex;gap:10px;margin-top:10px}
+.lb{flex:1;height:40px;border:1px solid var(--rand);border-radius:10px;background:var(--feld);font-size:14.5px;font-weight:550;color:var(--ak)}
+.heute-fertig{margin-top:10px;font-size:14.5px}
+.hinw{display:flex;gap:10px;padding:6px 0;font-size:14px;border-top:1px solid var(--rand)}
+.hinw:first-of-type{border-top:0}
+.hinw .i{width:16px;flex-shrink:0;text-align:center;font-weight:700}
+.i-i{color:var(--ak)}.i-w{color:var(--wa)}.i-e{color:var(--er)}.i-o{color:var(--ok)}
+.kpis2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kpis2 .card{margin-bottom:12px}
+.kpi .w{font-size:24px;font-weight:650;margin-top:3px;font-variant-numeric:tabular-nums}
+.gw{font-size:15px;margin-top:4px}
+.gw b{font-size:20px}
+.bar{position:relative;height:8px;border-radius:4px;background:var(--feld2);border:1px solid var(--rand);margin-top:8px;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--ak);border-radius:4px}
+.bar i.plan{background:repeating-linear-gradient(90deg,var(--wa) 0 4px,transparent 4px 7px);opacity:.75}
+.bar.wa i:not(.plan){background:var(--wa)}.bar.er i:not(.plan){background:var(--er)}
+/* Kalender */
+.kalnav{display:flex;align-items:center;gap:8px;margin:2px 0 10px}
+.nb{width:40px;height:40px;border:1px solid var(--rand);border-radius:10px;background:var(--feld);font-size:22px;line-height:1;color:var(--tx)}
+.kmon{flex:1;text-align:center;font-size:18px;font-weight:650}
+.kalnav .lb{flex:0 0 auto;padding:0 14px}
+.kal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:8px}
+.kwt{text-align:center;font-size:11.5px;color:var(--mu);font-weight:600;padding:2px 0}
+.kz{position:relative;height:54px;border-radius:10px;background:var(--feld);border:1px solid var(--rand);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:6px}
+.kz.leer{background:transparent;border-color:transparent}
+.kz.we{background:var(--feld2)}
+.kn{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.kz.an .kn{color:var(--ka)}
+.kz .ka{position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--ka)}
+.kh{font-size:11px;color:var(--mu);margin-top:3px;font-variant-numeric:tabular-nums}
+.kz.st-gearbeitet{background:var(--okhg);border-color:transparent}
+.kz.st-gearbeitet .kh{color:var(--ok);font-weight:650}
+.kz.st-geplant{background:var(--plhg);border:1px dashed var(--pl)}
+.kz.st-geplant .kh{color:var(--pl)}
+.kz.st-krank .kh,.kz.st-urlaub .kh,.kz.st-frei .kh{font-size:10.5px}
+.kz.heute{box-shadow:inset 0 0 0 2px var(--ak)}
+.kz.laeuft .kh::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:3px;vertical-align:1px}
+.leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mu);margin:2px 2px 12px}
+.leg span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;background:var(--c);border:1px solid var(--b,transparent)}
+.mz{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px}
+.mz div{font-size:12px;color:var(--mu)}
+.mz b{display:block;font-size:17px;color:var(--tx);font-variant-numeric:tabular-nums}
+.liste{padding:6px 0}
+.liste .l{padding:6px 16px 4px}
+.zt{display:flex;width:100%;align-items:center;text-align:left;padding:10px 16px;border-top:1px solid var(--rand);gap:10px}
+.zt .a{flex:1;min-width:0}
+.zt .a b{font-weight:600}
+.zt .a .an{color:var(--ka);font-size:12.5px;font-weight:600;margin-left:6px}
+.zt .a .s{font-size:13px;color:var(--mu);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zt .c{text-align:right;font-size:13px;color:var(--mu);font-variant-numeric:tabular-nums;white-space:nowrap}
+.zt .c b{display:block;font-size:15px;color:var(--tx)}
+.zt.geplant .c b{color:var(--pl)}
+.chip{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:6px;background:var(--feld2);color:var(--mu)}
+.chip.ok{background:var(--okhg);color:var(--ok)}.chip.wa{background:var(--wahg);color:var(--wa)}.chip.er{background:var(--erhg);color:var(--er)}.chip.pl{background:var(--plhg);color:var(--pl)}
+.leer-hinweis{color:var(--mu);text-align:center;font-size:14px;margin:18px 0}
+/* Übersicht */
+.kpis4{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kpis4 .card{margin-bottom:0}
+.kpis4 + *{margin-top:12px}
+.mo{padding:12px 16px;border-top:1px solid var(--rand)}
+.mo:first-of-type{border-top:0}
+.mo .k1{display:flex;justify-content:space-between;align-items:baseline}
+.mo .k1 b{font-size:15.5px}
+.mo .k1 span{font-variant-numeric:tabular-nums;font-weight:650}
+.mo .k2{display:flex;justify-content:space-between;font-size:12.5px;color:var(--mu);margin-top:2px}
+.seg{display:flex;border:1px solid var(--rand);border-radius:10px;overflow:hidden;background:var(--feld2)}
+.seg button{flex:1;padding:9px 6px;font-size:14px;color:var(--mu);border-left:1px solid var(--rand)}
+.seg button:first-child{border-left:0}
+.seg button.on{background:var(--feld);color:var(--ak);font-weight:650;box-shadow:inset 0 -2px 0 var(--ak)}
+/* Formulare */
+.feld{margin-top:12px}
+.feld label{display:block;font-size:13px;color:var(--mu);margin-bottom:5px}
+.feld input,.feld select,.feld textarea{width:100%;height:44px;border:1px solid var(--rand);border-radius:10px;background:var(--feld);padding:0 12px;-webkit-appearance:none;appearance:none}
+.feld textarea{height:70px;padding:10px 12px;resize:none}
+.feld select{background-image:linear-gradient(45deg,transparent 50%,var(--mu) 50%),linear-gradient(135deg,var(--mu) 50%,transparent 50%);background-position:calc(100% - 18px) 19px,calc(100% - 13px) 19px;background-size:5px 5px;background-repeat:no-repeat}
+input[type=time],input[type=date]{min-width:0;text-align:left}
+input[type=time]::-webkit-date-and-time-value,input[type=date]::-webkit-date-and-time-value{text-align:left}
+.zwei{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.schicht{display:grid;grid-template-columns:1fr 1fr 40px;gap:10px;align-items:end;margin-top:10px}
+.schicht .feld{margin-top:0}
+.x{height:44px;border:1px solid var(--rand);border-radius:10px;color:var(--er);font-size:20px;background:var(--feld)}
+.lauftxt{height:44px;border:1px dashed var(--ok);border-radius:10px;display:flex;align-items:center;padding:0 12px;color:var(--ok);font-weight:600}
+.schalter{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0}
+.schalter .t{font-size:15px}
+.schalter .t small{display:block;color:var(--mu);font-size:12.5px}
+.sw{width:51px;height:31px;border-radius:16px;background:var(--rand);position:relative;flex-shrink:0;transition:background .15s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.sw.on{background:var(--ok)}
+.sw.on::after{left:22px}
+.knopfreihe{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.zk{display:block;width:100%;text-align:left;padding:12px 14px;border:1px solid var(--rand);border-radius:10px;background:var(--feld);font-size:15px;font-weight:550}
+.zk small{display:block;font-size:12.5px;color:var(--mu);font-weight:400}
+.zk.rot{color:var(--er)}
+.lohnzeile{display:grid;grid-template-columns:1.3fr 1fr 40px;gap:8px;margin-top:8px}
+.lohnzeile input{width:100%;height:44px;border:1px solid var(--rand);border-radius:10px;background:var(--feld);padding:0 10px;-webkit-appearance:none}
+.calc{margin-top:12px;background:var(--feld2);border:1px solid var(--rand);border-radius:12px;padding:8px 14px}
+.calc div{display:flex;justify-content:space-between;padding:3px 0;font-size:14px;font-variant-numeric:tabular-nums}
+.calc div span:first-child{color:var(--mu)}
+.calc .sum{border-top:1px solid var(--rand);margin-top:4px;padding-top:8px;font-size:17px;font-weight:650}
+.calc .sum span:first-child{color:var(--tx)}
+.calc .sum span:last-child{color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips button{height:36px;padding:0 12px;border:1px solid var(--rand);border-radius:18px;background:var(--feld);font-size:14px;color:var(--ak);font-weight:550}
+.zeitgross input{height:64px;font-size:34px;font-weight:650;text-align:center;border:1px solid var(--rand);border-radius:14px;background:var(--feld);width:100%;-webkit-appearance:none}
+/* Sheet */
+.schleier{position:fixed;inset:0;background:rgba(10,14,20,.45);z-index:20;opacity:0;transition:opacity .2s}
+.schleier.auf{opacity:1}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--hg);border-radius:18px 18px 0 0;max-height:92vh;overflow:auto;-webkit-overflow-scrolling:touch;padding:8px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .25s ease;max-width:720px;margin:0 auto}
+.sheet.auf{transform:none}
+.griff{width:40px;height:5px;border-radius:3px;background:var(--rand);margin:4px auto 10px}
+.sk{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px}
+.sk h2{margin:0;font-size:21px;flex:1}
+.sk h2 small{display:block;font-size:13.5px;color:var(--mu);font-weight:400;margin-top:2px}
+.sk h2 small .an{color:var(--ka);font-weight:600}
+.sk .zu{height:34px;padding:0 12px;border-radius:17px;background:var(--feld2);border:1px solid var(--rand);font-size:14px;color:var(--mu)}
+.sfuss{display:flex;gap:10px;margin-top:16px}
+.sfuss .gb{margin-top:0}
+/* Tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;background:var(--feld);border-top:1px solid var(--rand);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{flex:1;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--mu);position:relative}
+.tabs button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs button.on{color:var(--ak);font-weight:600}
+.tabs button .dot{position:absolute;top:8px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:var(--wa)}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--tx);color:var(--hg);padding:10px 16px;border-radius:12px;font-size:14px;z-index:30;opacity:0;transition:all .2s;max-width:90vw;text-align:center;pointer-events:none}
+.toast.auf{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Stundenzettel */
+#zettel{position:fixed;inset:0;z-index:40;background:#5A5E6B;overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top) + 10px) 10px 30px}
+#zettel .zl{display:flex;gap:8px;max-width:760px;margin:0 auto 10px}
+#zettel .zl button{flex:1;height:44px;border-radius:10px;background:#fff;color:#1C2128;font-weight:600}
+#zettel .zl button.p{background:#1F5FBF;color:#fff}
+.blatt{background:#fff;color:#1C2128;width:760px;margin:0 auto;padding:28px 26px;font-size:12.5px;line-height:1.4}
+.blatt .bk{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1F5FBF;padding-bottom:8px;gap:12px}
+.blatt h3{margin:0;font-size:22px}
+.blatt .bs{color:#69707A}
+.blatt .zr{text-align:right;color:#69707A}
+.blatt .zr b{display:block;color:#1C2128;font-size:15px}
+.blatt .bd{display:grid;grid-template-columns:1fr 1fr;gap:2px 24px;margin:12px 0 14px}
+.blatt .bd div{display:flex;border-bottom:1px solid #E3E6EC;padding:3px 0}
+.blatt .bd span{width:110px;color:#69707A;flex-shrink:0}
+.blatt table{border-collapse:collapse;width:100%}
+.blatt th{background:#F2F3F6;text-align:left;padding:5px 6px;font-size:11px;color:#4A5063;border-bottom:1px solid #C9CDD6}
+.blatt td{padding:5px 6px;border-bottom:1px solid #E3E6EC}
+.blatt .r{text-align:right}
+.blatt .ka{color:#B42335;font-size:11px;font-weight:600}
+.blatt tr.sum td{border-top:2px solid #1C2128;border-bottom:0;font-weight:700}
+.blatt .bh{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.blatt .bh div{border:1px solid #E3E6EC;padding:8px 10px}
+.blatt .bh b{display:block;font-size:10.5px;color:#69707A;letter-spacing:.3px;margin-bottom:3px}
+.blatt .uz{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:60px;color:#69707A;font-size:11.5px}
+.blatt .uz div{border-top:1px solid #1C2128;padding-top:5px}
+.blatt .bf{margin-top:26px;border-top:1px solid #E3E6EC;padding-top:6px;color:#8A90A0;font-size:10.5px;display:flex;justify-content:space-between}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff}
+  body>*:not(#zettel){display:none!important}
+  #zettel{position:static;background:#fff;padding:0;overflow:visible}
+  #zettel .zl{display:none}
+  .blatt{width:auto;padding:0;font-size:11.5px;zoom:1!important}
+}
+@media (min-width:700px){ .kz{height:70px} }
+</style>
+</head>
+<body>
+<header class="kopf" id="kopf"><h1 id="kT">Heute</h1><div class="sub" id="kS"></div></header>
+<main id="seite"></main>
+<nav class="tabs" id="tabs">
+  <button data-tab="heute" class="on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Heute</button>
+  <button data-tab="kalender"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.8h17M8 3v4M16 3v4"/></svg>Kalender</button>
+  <button data-tab="uebersicht"><svg viewBox="0 0 24 24"><path d="M5 20V12M10 20V5M15 20v-9M20 20V8"/></svg>Übersicht</button>
+  <button data-tab="mehr"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg>Mehr</button>
+</nav>
+<div class="schleier" id="schleier" hidden></div>
+<div class="sheet" id="sheet" hidden></div>
+<div class="toast" id="toast"></div>
+<div id="zettel" hidden></div>
+<input type="file" id="datei" accept="application/json,.json" hidden>
+<script>
+'use strict';
+/* ===== Zeiterfassung Minijob – läuft komplett im Browser, Daten nur auf diesem Gerät ===== */
+const VERSION = '1.0';
+const KEY = 'zeiterfassung.v1';
+// Stand November 2026 – bei neuen Werten hier ergänzen
+const MINDESTLOHN = [['2025-01-01', 12.82], ['2026-01-01', 13.90], ['2027-01-01', 14.60]];
+const GRENZE = [['2025-01-01', 556], ['2026-01-01', 603], ['2027-01-01', 633]];
+const RV_SATZ = 0.036;
+const LAENDER = {BW:'Baden-Württemberg',BY:'Bayern',BE:'Berlin',BB:'Brandenburg',HB:'Bremen',HH:'Hamburg',HE:'Hessen',MV:'Mecklenburg-Vorpommern',NI:'Niedersachsen',NW:'Nordrhein-Westfalen',RP:'Rheinland-Pfalz',SL:'Saarland',SN:'Sachsen',ST:'Sachsen-Anhalt',SH:'Schleswig-Holstein',TH:'Thüringen'};
+const STATUS = {gearbeitet:'gearbeitet', geplant:'geplant', frei:'frei', krank:'krank', urlaub:'Urlaub'};
+const WT = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const WTL = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const MON = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+/* ---------- Speicher ---------- */
+function neu(){
+  return {v:1, setup:false,
+    set:{name:'', firma:'', persnr:'', land:'NW', theme:'auto', rv:true, pauseAuto:true, lohnModus:'min',
+         lohn:[{ab:'2026-01-01', eur:13.90}], taet:''},
+    days:{}, run:null, backup:null};
+}
+function laden(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if(s && s.v === 1){ const n = neu(); s.set = Object.assign(n.set, s.set || {}); s.days = s.days || {}; return s; }
+  }catch(e){}
+  return neu();
+}
+let S = laden();
+function speichern(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); return true; }
+  catch(e){ toast('Speichern ging nicht – Speicher voll oder gesperrt'); return false; }
+}
+
+/* ---------- Datum, Zeit, Geld ---------- */
+const pad = n => String(n).padStart(2, '0');
+function iso(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+function dIso(s){ const [y,m,t] = s.split('-').map(Number); return new Date(y, m-1, t); }
+function plusTage(s, n){ const d = dIso(s); d.setDate(d.getDate()+n); return iso(d); }
+function heute(){ return iso(new Date()); }
+function jetztHM(){ const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function hmMin(s){ const m = /^(\d{1,2}):(\d{2})/.exec(s || ''); return m ? (+m[1])*60 + (+m[2]) : null; }
+function minHm(n){ n = ((Math.round(n) % 1440) + 1440) % 1440; return pad(Math.floor(n/60)) + ':' + pad(n % 60); }
+function fH(min){ min = Math.max(0, Math.round(min || 0)); return Math.floor(min/60) + ':' + pad(min % 60); }
+const EUR = new Intl.NumberFormat('de-DE', {style:'currency', currency:'EUR'});
+function fE(x){ return EUR.format(x || 0); }
+function fZ(x){ return (x || 0).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function tageZwischen(a, b){ return Math.round((dIso(b) - dIso(a)) / 86400000); }
+function datumLang(s){ const d = dIso(s); return WTL[d.getDay()] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear(); }
+function datumKurz(s){ const d = dIso(s); return WT[d.getDay()] + ' ' + pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.'; }
+function datumZahl(s){ return s.slice(8,10) + '.' + s.slice(5,7) + '.' + s.slice(0,4); }
+function monatsEnde(s){ const d = dIso(s); return iso(new Date(d.getFullYear(), d.getMonth()+1, 0)); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function zahl(v){ const n = parseFloat(String(v).replace(/\s/g,'').replace(',', '.')); return isNaN(n) ? null : n; }
+
+/* ---------- Ostern, Feiertage, Karneval ---------- */
+const CACHE = {};
+function ostern(Y){
+  if(CACHE['o'+Y]) return CACHE['o'+Y];
+  const a=Y%19, b=Math.floor(Y/100), c=Y%100, d=Math.floor(b/4), e=b%4, f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4, l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451),
+        mo=Math.floor((h+l-7*m+114)/31), t=((h+l-7*m+114)%31)+1;
+  return CACHE['o'+Y] = iso(new Date(Y, mo-1, t));
+}
+function aschermittwoch(Y){ return plusTage(ostern(Y), -46); }
+function feiertage(Y, land){
+  const k = 'f'+Y+land; if(CACHE[k]) return CACHE[k];
+  const o = ostern(Y), f = {}, in_ = l => l.includes(land), add = (d, n) => { f[d] = n; };
+  add(Y+'-01-01', 'Neujahr');
+  if(in_(['BW','BY','ST'])) add(Y+'-01-06', 'Heilige Drei Könige');
+  if(in_(['BE','MV'])) add(Y+'-03-08', 'Frauentag');
+  add(plusTage(o,-2), 'Karfreitag'); if(land==='BB') add(o, 'Ostersonntag'); add(plusTage(o,1), 'Ostermontag');
+  add(Y+'-05-01', 'Tag der Arbeit'); add(plusTage(o,39), 'Christi Himmelfahrt');
+  if(land==='BB') add(plusTage(o,49), 'Pfingstsonntag'); add(plusTage(o,50), 'Pfingstmontag');
+  if(in_(['BW','BY','HE','NW','RP','SL'])) add(plusTage(o,60), 'Fronleichnam');
+  if(land==='SL') add(Y+'-08-15', 'Mariä Himmelfahrt');
+  if(land==='TH') add(Y+'-09-20', 'Weltkindertag');
+  add(Y+'-10-03', 'Tag der Deutschen Einheit');
+  if(in_(['BB','HB','HH','MV','NI','SN','ST','SH','TH'])) add(Y+'-10-31', 'Reformationstag');
+  if(in_(['BW','BY','NW','RP','SL'])) add(Y+'-11-01', 'Allerheiligen');
+  if(land==='SN'){ const d = new Date(Y,10,22); while(d.getDay()!==3) d.setDate(d.getDate()-1); add(iso(d), 'Buß- und Bettag'); }
+  add(Y+'-12-25', '1. Weihnachtstag'); add(Y+'-12-26', '2. Weihnachtstag');
+  return CACHE[k] = f;
+}
+function karneval(Y){
+  const k = 'k'+Y; if(CACHE[k]) return CACHE[k];
+  const a = aschermittwoch(Y), r = {};
+  r[Y+'-11-11'] = 'Sessionsbeginn';
+  [['Weiberfastnacht',-6],['Karnevalsfreitag',-5],['Karnevalssamstag',-4],['Karnevalssonntag',-3],['Rosenmontag',-2],['Veilchendienstag',-1],['Aschermittwoch',0]]
+    .forEach(([n,o]) => { r[plusTage(a,o)] = n; });
+  return CACHE[k] = r;
+}
+function anlass(s){
+  const Y = +s.slice(0,4), f = feiertage(Y, S.set.land)[s];
+  if(f) return {n:f, t:'ft'};
+  const k = karneval(Y)[s];
+  return k ? {n:k, t:'ka'} : null;
+}
+/* Session: 1. Oktober bis Ende des Monats mit Aschermittwoch */
+function sessionVon(s){
+  const Y = +s.slice(0,4);
+  if(s >= Y+'-10-01') return Y;
+  if(s <= monatsEnde(aschermittwoch(Y))) return Y-1;
+  return null;
+}
+function sessionBereich(Y){
+  const a = aschermittwoch(Y+1);
+  return {Y, von:Y+'-10-01', bis:monatsEnde(a), ascher:a, name:Y+'/'+String(Y+1).slice(2)};
+}
+
+/* ---------- Lohn und Grenzen ---------- */
+function tabWert(tab, s){ let w = null; for(const [ab, v] of tab){ if(ab <= s) w = v; } return w; }
+function lohnTab(){
+  return S.set.lohnModus === 'min' ? MINDESTLOHN
+    : S.set.lohn.filter(x => x.ab && x.eur != null).slice().sort((a,b) => a.ab < b.ab ? -1 : 1).map(x => [x.ab, x.eur]);
+}
+function lohnAm(s){ const t = lohnTab(); const w = tabWert(t, s); return w != null ? w : (t[0] ? t[0][1] : 0); }
+function mindestAm(s){ return tabWert(MINDESTLOHN, s) || 0; }
+function grenzeAm(s){ const w = tabWert(GRENZE, s); return w != null ? w : GRENZE[0][1]; }
+
+/* ---------- Rechnen ---------- */
+// Pausenautomatik: Anwesenheit über 6 Std. = 30 Min., über 9 Std. = 45 Min. Lücken zwischen Schichten und eigene Pause zählen mit.
+function calcTag(s, t, nowD){
+  t = t || S.days[s];
+  const r = {s, st:t ? t.st : null, segs:[], S:0, W:0, G:0, R:0, B:0, A:0, rate:lohnAm(s), eur:0, offen:false, auto:false, w:[]};
+  if(!t || !(t.st === 'gearbeitet' || t.st === 'geplant') || !t.sh || !t.sh.length) return r;
+  nowD = nowD || new Date();
+  const nowMin = tageZwischen(s, iso(nowD))*1440 + nowD.getHours()*60 + nowD.getMinutes();
+  const segs = [];
+  for(const sh of t.sh){
+    const b = hmMin(sh.b); if(b == null) continue;
+    let e;
+    if(sh.e == null || sh.e === ''){
+      if(t.st !== 'gearbeitet' || !(S.run && S.run.d === s)) continue;
+      e = Math.max(b, nowMin); r.offen = true;
+    } else { e = hmMin(sh.e); if(e == null) continue; if(e <= b) e += 1440; }
+    segs.push([b, e]);
+  }
+  segs.sort((x, y) => x[0] - y[0]);
+  if(!segs.length) return r;
+  for(let i = 1; i < segs.length; i++) if(segs[i][0] < segs[i-1][1]) r.w.push(['e','Schichten überschneiden sich']);
+  r.segs = segs;
+  r.S = segs[segs.length-1][1] - segs[0][0];
+  r.W = segs.reduce((a, x) => a + x[1] - x[0], 0);
+  r.G = Math.max(0, r.S - r.W);
+  const p = (t.p != null && t.p !== '') ? Math.max(0, +t.p || 0) : 0;
+  r.R = S.set.pauseAuto ? (r.S > 540 ? 45 : (r.S > 360 ? 30 : 0)) : 0;
+  r.B = Math.min(r.S, Math.max(r.R, r.G + p));
+  r.auto = r.R > r.G + p;
+  r.A = r.S - r.B;
+  r.eur = Math.round(r.A / 60 * r.rate * 100) / 100;
+  if(r.A > 600) r.w.push(['e','Mehr als 10 Stunden Arbeitszeit – laut Arbeitszeitgesetz nicht erlaubt']);
+  else if(r.A === 600) r.w.push(['w','10 Stunden erreicht – mehr ist nicht erlaubt']);
+  if(r.offen && r.S > 14*60) r.w.push(['e','Seit über 14 Stunden eingestempelt – Ausstempeln vergessen?']);
+  if(!r.offen && r.S > 16*60) r.w.push(['e','Schicht über 16 Stunden – Uhrzeiten prüfen']);
+  if(S.set.lohnModus !== 'min' && r.rate < mindestAm(s)) r.w.push(['e','Stundenlohn unter dem Mindestlohn (' + fE(mindestAm(s)) + ')']);
+  return r;
+}
+function absMin(s, m){ return tageZwischen('2000-01-01', s)*1440 + m; }
+function letzterEnde(s, nowD){
+  for(let i = 1; i <= 2; i++){
+    const p = plusTage(s, -i), t = S.days[p];
+    if(t && t.st === 'gearbeitet'){ const r = calcTag(p, t, nowD); if(r.segs.length) return absMin(p, r.segs[r.segs.length-1][1]); }
+  }
+  return null;
+}
+function calcVoll(s, t, nowD){
+  nowD = nowD || new Date();
+  const r = calcTag(s, t, nowD);
+  if(r.segs.length){
+    const le = letzterEnde(s, nowD);
+    if(le != null){ r.ruhe = absMin(s, r.segs[0][0]) - le; if(r.ruhe < 660) r.w.push(['e','Ruhezeit nur ' + fH(r.ruhe) + ' Std. – mindestens 11 Std.']); }
+  }
+  return r;
+}
+function monat(y, m){
+  const res = {y, m, A:0, eur:0, tage:0, planA:0, planEur:0, planTage:0, offen:false, rows:[]};
+  const n = new Date(y, m+1, 0).getDate(), nowD = new Date();
+  for(let t = 1; t <= n; t++){
+    const s = y + '-' + pad(m+1) + '-' + pad(t), d = S.days[s];
+    if(!d) continue;
+    const r = calcTag(s, d, nowD);
+    if(d.st === 'gearbeitet' && r.A > 0){ res.A += r.A; res.eur += r.eur; res.tage++; if(r.offen) res.offen = true; }
+    else if(d.st === 'geplant' && r.A > 0){ res.planA += r.A; res.planEur += r.eur; res.planTage++; }
+    res.rows.push([s, d, r]);
+  }
+  res.eur = Math.round(res.eur*100)/100; res.planEur = Math.round(res.planEur*100)/100;
+  res.grenze = grenzeAm(y + '-' + pad(m+1) + '-01');
+  res.prog = Math.round((res.eur + res.planEur)*100)/100;
+  return res;
+}
+function woche(s){
+  const d = dIso(s), mo = plusTage(s, -((d.getDay()+6)%7)), nowD = new Date();
+  let A = 0, eur = 0, tage = 0;
+  for(let i = 0; i < 7; i++){ const t = plusTage(mo, i), x = S.days[t]; if(x && x.st === 'gearbeitet'){ const r = calcTag(t, x, nowD); if(r.A > 0){ A += r.A; eur += r.eur; tage++; } } }
+  return {A, eur:Math.round(eur*100)/100, tage, von:mo};
+}
+function schichtText(d){ return (d.sh || []).filter(x => x.b).map(x => x.b + '–' + (x.e ? x.e : 'läuft')).join(', '); }
+
+/* ---------- Oberfläche: Grundgerüst ---------- */
+const $ = id => document.getElementById(id);
+let tab = 'heute', kalY, kalM, uebSess = null;
+{ const d = new Date(); kalY = d.getFullYear(); kalM = d.getMonth(); }
+function kopf(t, sub){ $('kT').textContent = t; $('kS').innerHTML = sub || ''; }
+let toastT;
+function toast(t){ const e = $('toast'); e.textContent = t; e.classList.add('auf'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('auf'), 2600); }
+function themaAnwenden(){
+  const t = S.set.theme, dark = t === 'dunkel' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  $('themeColor').content = dark ? '#111315' : '#F1F2F4';
+}
+function backupFaellig(){
+  if(!Object.keys(S.days).length) return false;
+  return !S.backup || tageZwischen(S.backup.slice(0,10), heute()) >= 14;
+}
+function zeige(neuTab){
+  if(neuTab && neuTab !== tab){ tab = neuTab; window.scrollTo(0, 0); }
+  document.querySelectorAll('#tabs button').forEach(b => {
+    b.classList.toggle('on', b.dataset.tab === tab);
+    const dot = b.querySelector('.dot');
+    if(b.dataset.tab === 'mehr'){ if(backupFaellig() && !dot) b.insertAdjacentHTML('beforeend', '<span class="dot"></span>'); if(!backupFaellig() && dot) dot.remove(); }
+  });
+  ({heute:pHeute, kalender:pKalender, uebersicht:pUebersicht, mehr:pMehr})[tab]();
+}
+window.addEventListener('scroll', () => $('kopf').classList.toggle('schatten', window.scrollY > 4), {passive:true});
+
+/* ---------- Seite: Heute ---------- */
+function hinweisListe(l){ return l.map(([t, x]) => `<div class="hinw"><span class="i i-${t==='e'?'e':t==='w'?'w':t==='o'?'o':'i'}">${t==='o'?'✓':t==='i'?'i':'!'}</span><span>${esc(x)}</span></div>`).join(''); }
+function grenzeKarte(m){
+  const g = m.grenze, p = Math.min(100, m.eur/g*100), pp = Math.min(100, m.prog/g*100), rest = g - m.eur;
+  let cls = '', txt;
+  if(m.eur > g){ cls = 'er'; txt = fE(m.eur - g) + ' über der Minijob-Grenze'; }
+  else if(m.prog > g){ cls = 'wa'; txt = 'noch ' + fE(rest) + ' frei · mit Geplantem ' + fE(m.prog) + ' – über der Grenze'; }
+  else if(rest < g*0.1){ cls = 'wa'; txt = 'noch ' + fE(rest) + ' frei – knapp'; }
+  else txt = 'noch ' + fE(rest) + ' frei' + (m.planEur ? ' · mit Geplantem ' + fE(m.prog) : '');
+  return `<section class="card"><div class="l">Minijob-Grenze ${MON[m.m]} ${m.y}</div><div class="gw"><b>${fE(m.eur)}</b> von ${fE(g)}</div>
+    <div class="bar ${cls}"><i class="plan" style="width:${pp}%"></i><i style="width:${p}%"></i></div><div class="u ${cls}">${txt}</div></section>`;
+}
+function pHeute(){
+  const s = heute(), nowD = new Date(), t = S.days[s], an = anlass(s);
+  kopf('Heute', esc(datumLang(s)) + (an ? ' · <span style="color:var(--ka);font-weight:600">' + esc(an.n) + '</span>' : ''));
+  let h = '';
+  if(S.run && S.days[S.run.d] && S.days[S.run.d].sh[S.run.i]){
+    const rd = S.run.d, td = S.days[rd], sh = td.sh[S.run.i], r = calcVoll(rd, td, nowD);
+    const tz = tageZwischen(rd, s), seit = (tz === 0 ? '' : tz === 1 ? 'gestern ' : datumKurz(rd) + ' ') + sh.b;
+    h += `<section class="card stempel lauf"><div class="st-k"><span class="punkt"></span><span>Eingestempelt seit <b>${seit}</b></span></div>
+      <div class="st-z"><div><div class="gross" id="lzA">${fH(r.A)}</div><div class="klein" id="lzP">${r.B ? 'Std. · Pause ' + fH(r.B) + ' abgezogen' : 'Std. Arbeitszeit'}</div></div>
+      <div><div class="gross" id="lzE">${fE(r.eur)}</div><div class="klein">verdient</div></div></div>
+      <button class="gb rot" data-a="aus">Ausstempeln</button>
+      <div class="zeile"><button class="lb" data-a="beginn">Beginn ändern</button><button class="lb" data-a="tag" data-d="${rd}">Tag öffnen</button></div></section>`;
+    const b0 = r.segs[0][0], hin = [];
+    if(S.set.pauseAuto){
+      if(r.S <= 360) hin.push(['i', 'Ab ' + minHm(b0+360) + ' Uhr (6 Std. da) werden automatisch 30 Min. Pause abgezogen.']);
+      if(r.S <= 540) hin.push(['i', 'Ab ' + minHm(b0+540) + ' Uhr (9 Std. da) sind es 45 Min. Pause.']);
+    }
+    const p = (td.p != null && td.p !== '') ? +td.p || 0 : 0;
+    const ende10 = b0 + 600 + Math.max(S.set.pauseAuto ? 45 : 0, r.G + p);
+    if(r.A < 600) hin.push(['w', '10-Stunden-Grenze: spätestens um ' + minHm(ende10) + ' Uhr ausstempeln.']);
+    if(td.plan && td.plan.e) hin.push(['i', 'Geplant war bis ' + td.plan.e + ' Uhr.']);
+    r.w.forEach(x => hin.push(x));
+    if(r.ruhe != null && r.ruhe >= 660) hin.push(['o', 'Ruhezeit seit der letzten Schicht: ' + fH(r.ruhe) + ' Std.']);
+    h += `<section class="card"><div class="l">Für heute</div><div style="margin-top:6px">${hinweisListe(hin)}</div></section>`;
+  } else {
+    if(S.run) { S.run = null; speichern(); }
+    const r = t ? calcVoll(s, t, nowD) : null;
+    h += `<section class="card stempel"><div class="st-k"><span class="punkt aus"></span><span>Nicht eingestempelt</span></div>`;
+    if(t && t.st === 'gearbeitet' && r.A > 0) h += `<div class="heute-fertig">Heute: ${esc(schichtText(t))} · <b>${fH(r.A)} Std.</b> · <b>${fE(r.eur)}</b></div>`;
+    else if(t && t.st === 'geplant') h += `<div class="heute-fertig">Geplant: <b>${esc(schichtText(t))}</b>${t.t ? ' · ' + esc(t.t) : ''}</div>`;
+    else if(t && t.st !== 'gearbeitet') h += `<div class="heute-fertig">Heute eingetragen: <b>${esc(STATUS[t.st])}</b></div>`;
+    h += `<button class="gb" data-a="ein">Einstempeln</button></section>`;
+  }
+  const d = new Date(), m = monat(d.getFullYear(), d.getMonth()), w = woche(s);
+  h += `<section class="kpis2"><div class="card kpi"><div class="l">Diese Woche</div><div class="w">${fH(w.A)} Std.</div><div class="u">${fE(w.eur)} · ${w.tage} ${w.tage===1?'Tag':'Tage'}</div></div>
+        <div class="card kpi"><div class="l">${MON[m.m]}</div><div class="w">${fH(m.A)} Std.</div><div class="u">${fE(m.eur)} · ${m.tage} ${m.tage===1?'Tag':'Tage'}</div></div></section>`;
+  h += grenzeKarte(m);
+  const nx = [];
+  for(let i = 1; i <= 45 && nx.length < 3; i++){ const x = plusTage(s, i), dd = S.days[x]; if(dd && dd.st === 'geplant') nx.push(x); }
+  if(nx.length) h += `<section class="card liste"><div class="l">Nächste geplante Schichten</div>${nx.map(x => zeileTag(x, S.days[x], calcTag(x, S.days[x], nowD))).join('')}</section>`;
+  if(backupFaellig()) h += `<section class="card"><div class="hinw"><span class="i i-w">!</span><span>Deine Daten liegen nur auf diesem Handy. Speichere ab und zu eine Sicherung: <button class="lb" style="display:inline;flex:none;height:auto;border:0;padding:0;color:var(--ak);background:none" data-a="tabMehr">Mehr → Sicherung</button></span></div></section>`;
+  $('seite').innerHTML = h;
+}
+function liveAktualisieren(){
+  if(tab !== 'heute' || !S.run || $('sheet').classList.contains('auf')) return;
+  const td = S.days[S.run.d]; if(!td) return;
+  const r = calcTag(S.run.d, td, new Date());
+  if($('lzA')){ $('lzA').textContent = fH(r.A); $('lzE').textContent = fE(r.eur); $('lzP').textContent = r.B ? 'Std. · Pause ' + fH(r.B) + ' abgezogen' : 'Std. Arbeitszeit'; }
+}
+setInterval(liveAktualisieren, 15000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden && !$('sheet').classList.contains('auf')) zeige(); });
+
+/* ---------- Seite: Kalender ---------- */
+function zeileTag(s, d, r){
+  const an = anlass(s), arbeit = d.st === 'gearbeitet' || d.st === 'geplant';
+  const sub = arbeit ? schichtText(d) + (d.t ? ' · ' + d.t : '') : (d.n || '');
+  return `<button class="zt ${d.st}" data-a="tag" data-d="${s}"><div class="a"><b>${datumKurz(s)}</b>${an ? `<span class="an">${esc(an.n)}</span>` : ''}
+    <div class="s">${d.st === 'geplant' ? '<span class="chip pl">geplant</span> ' : (!arbeit ? `<span class="chip">${STATUS[d.st]}</span> ` : '')}${esc(sub)}</div></div>
+    <div class="c">${r.A ? fH(r.A) + ' Std.<b>' + fE(r.eur) + '</b>' : ''}</div></button>`;
+}
+function pKalender(){
+  kopf('Kalender', 'Tippe auf einen Tag zum Eintragen oder Ändern');
+  const s0 = heute(), first = new Date(kalY, kalM, 1), off = (first.getDay()+6)%7, n = new Date(kalY, kalM+1, 0).getDate(), nowD = new Date();
+  let h = `<div class="kalnav"><button class="nb" data-a="kprev" aria-label="Vormonat">‹</button><div class="kmon">${MON[kalM]} ${kalY}</div>
+    <button class="nb" data-a="knext" aria-label="Nächster Monat">›</button><button class="lb" data-a="kheute">Heute</button></div><div class="kal">`;
+  h += ['Mo','Di','Mi','Do','Fr','Sa','So'].map(x => `<div class="kwt">${x}</div>`).join('');
+  for(let i = 0; i < off; i++) h += '<div class="kz leer"></div>';
+  for(let t = 1; t <= n; t++){
+    const s = kalY + '-' + pad(kalM+1) + '-' + pad(t), d = S.days[s], an = anlass(s), wd = (off+t-1)%7;
+    let cls = 'kz', inh = '';
+    if(wd >= 5) cls += ' we';
+    if(s === s0) cls += ' heute';
+    if(an) cls += ' an';
+    if(d){
+      cls += ' st-' + d.st;
+      const r = calcTag(s, d, nowD);
+      if(r.A > 0) inh = `<span class="kh">${fH(r.A)}</span>`;
+      else if(d.st !== 'gearbeitet' && d.st !== 'geplant') inh = `<span class="kh">${STATUS[d.st]}</span>`;
+      if(r.offen) cls += ' laeuft';
+    }
+    h += `<button class="${cls}" data-a="tag" data-d="${s}" aria-label="${datumLang(s)}${an ? ', ' + esc(an.n) : ''}"><span class="kn">${t}</span>${an ? '<span class="ka"></span>' : ''}${inh}</button>`;
+  }
+  h += `</div><div class="leg"><span style="--c:var(--okhg);--b:var(--ok)">gearbeitet</span><span style="--c:var(--plhg);--b:var(--pl)">geplant</span><span style="--c:var(--ka)">Karneval / Feiertag</span><span style="--c:transparent;--b:var(--ak)">heute</span></div>`;
+  const m = monat(kalY, kalM);
+  h += `<section class="card"><div class="l">${MON[kalM]} ${kalY}</div><div class="mz"><div><b>${fH(m.A)}</b>Stunden</div><div><b>${fE(m.eur)}</b>Brutto</div><div><b>${m.tage}</b>Arbeitstage</div></div>
+    ${m.planTage ? `<div class="u" style="margin-top:8px">Dazu geplant: ${m.planTage} ${m.planTage===1?'Tag':'Tage'} · ${fH(m.planA)} Std. · ${fE(m.planEur)}</div>` : ''}</section>`;
+  h += grenzeKarte(m);
+  const zeilen = m.rows.filter(([s, d]) => d.st !== 'gearbeitet' || (d.sh && d.sh.length));
+  h += zeilen.length ? `<section class="card liste"><div class="l">Einträge</div>${zeilen.map(([s, d, r]) => zeileTag(s, d, r)).join('')}</section>`
+                     : `<p class="leer-hinweis">In diesem Monat ist noch nichts eingetragen.</p>`;
+  $('seite').innerHTML = h;
+}
+
+/* ---------- Seite: Übersicht ---------- */
+function alleSessions(){
+  const set = new Set();
+  Object.keys(S.days).forEach(s => { const y = sessionVon(s); if(y != null) set.add(y); });
+  const jetzt = sessionVon(heute()); if(jetzt != null) set.add(jetzt);
+  return [...set].sort((a, b) => a - b);
+}
+function pUebersicht(){
+  const ss = alleSessions();
+  let Y = uebSess;
+  if(Y == null || !ss.includes(Y)) Y = sessionVon(heute()); if(Y == null) Y = ss.length ? ss[ss.length-1] : new Date().getFullYear();
+  const b = sessionBereich(Y);
+  kopf('Übersicht', 'Session ' + b.name + ' · Aschermittwoch ' + datumZahl(b.ascher));
+  const months = [];
+  let d = dIso(b.von); d = new Date(d.getFullYear(), d.getMonth(), 1);
+  const end = dIso(b.bis);
+  while(d <= end){ months.push(monat(d.getFullYear(), d.getMonth())); d = new Date(d.getFullYear(), d.getMonth()+1, 1); }
+  const used = months.filter(m => m.tage || m.planTage);
+  const A = used.reduce((a, m) => a + m.A, 0), eur = Math.round(used.reduce((a, m) => a + m.eur, 0)*100)/100, tage = used.reduce((a, m) => a + m.tage, 0);
+  const netto = S.set.rv ? Math.round(eur*(1-RV_SATZ)*100)/100 : eur;
+  let h = '';
+  if(ss.length > 1) h += `<div class="seg" style="margin-bottom:12px">${ss.map(y => `<button data-a="sess" data-v="${y}" class="${y===Y?'on':''}">${y}/${String(y+1).slice(2)}</button>`).join('')}</div>`;
+  h += `<div class="kpis4"><div class="card kpi"><div class="l">Arbeitszeit</div><div class="w">${fH(A)}</div><div class="u">Stunden · ${tage} Tage</div></div>
+    <div class="card kpi"><div class="l">Brutto</div><div class="w">${fE(eur)}</div><div class="u">ganze Session</div></div>
+    <div class="card kpi"><div class="l">Netto (geschätzt)</div><div class="w">${fE(netto)}</div><div class="u">${S.set.rv ? 'minus 3,6 % Rentenvers.' : 'von der Rente befreit'}</div></div>
+    <div class="card kpi"><div class="l">Ø pro Arbeitstag</div><div class="w">${tage ? fH(A/tage) : '0:00'}</div><div class="u">${tage ? fE(eur/tage) : fE(0)}</div></div></div>`;
+  if(!used.length) h += `<p class="leer-hinweis">In dieser Session ist noch nichts eingetragen.</p>`;
+  else {
+    h += `<section class="card liste"><div class="l">Monate</div>`;
+    used.forEach(m => {
+      const g = m.grenze, p = Math.min(100, m.eur/g*100), pp = Math.min(100, m.prog/g*100);
+      const st = m.eur > g ? ['er','über Grenze'] : m.prog > g ? ['wa','mit Geplantem drüber'] : (g - m.eur) < g*0.1 ? ['wa','knapp'] : ['ok','im Rahmen'];
+      h += `<div class="mo"><div class="k1"><b>${MON[m.m]} ${m.y}</b><span>${fE(m.eur)}</span></div>
+        <div class="k2"><span>${m.tage} Tage · ${fH(m.A)} Std. · ${fZ(lohnAm(m.y+'-'+pad(m.m+1)+'-15'))} €/Std.</span><span class="chip ${st[0]}">${st[1]}</span></div>
+        <div class="bar ${st[0]==='ok'?'':st[0]}"><i class="plan" style="width:${pp}%"></i><i style="width:${p}%"></i></div>
+        <div class="k2"><span>Grenze ${fE(g)} · noch frei ${fE(Math.max(0, g - m.eur))}</span><span>${m.planTage ? 'geplant +' + fE(m.planEur) : ''}</span></div></div>`;
+    });
+    h += `</section>`;
+    // Kalenderjahre
+    const jahre = {};
+    used.forEach(m => { (jahre[m.y] = jahre[m.y] || {eur:0}).eur += m.eur; });
+    h += `<section class="card"><div class="l">Kalenderjahr (Minijob-Jahresgrenze)</div>`;
+    Object.keys(jahre).forEach(y => {
+      const jg = grenzeAm(y + '-06-01') * 12, alle = jahrSumme(+y);
+      h += `<div class="hinw"><span class="i i-${alle > jg ? 'e' : 'o'}">${alle > jg ? '!' : '✓'}</span><span>${y}: ${fE(alle)} von ${fE(jg)} im ganzen Jahr</span></div>`;
+    });
+    h += `</section>`;
+    // Prüfung
+    const pr = [];
+    used.forEach(m => m.rows.forEach(([s, dd]) => { if(dd.st === 'gearbeitet' || dd.st === 'geplant'){ const r = calcVoll(s, dd); r.w.forEach(w => pr.push([w[0], datumKurz(s) + ' ' + s.slice(0,4) + ': ' + w[1]])); if(r.auto && dd.st === 'gearbeitet') pr.push(['i', datumKurz(s) + ': Pause automatisch ' + fH(r.B) + ' Std.']); } }));
+    const fehler = pr.filter(x => x[0] !== 'i');
+    h += `<section class="card"><div class="l">Prüfung</div><div style="margin-top:6px">`;
+    h += fehler.length ? hinweisListe(fehler) : hinweisListe([['o','Pausen, Ruhezeiten und 10-Stunden-Grenze eingehalten']]);
+    const autoN = pr.filter(x => x[0] === 'i').length;
+    if(autoN) h += hinweisListe([['i', 'An ' + autoN + ' ' + (autoN===1?'Tag':'Tagen') + ' wurde die Pause automatisch abgezogen.']]);
+    h += `</div></section>`;
+  }
+  h += `<p class="klein" style="margin:4px 4px 0">Minijob: Die Monatsgrenze ist eine Orientierung. Gelegentlich darf sie überschritten werden – im Zweifel mit dem Arbeitgeber klären. Netto ist nur geschätzt, Steuer zahlt beim Minijob meist der Arbeitgeber.</p>`;
+  $('seite').innerHTML = h;
+}
+function jahrSumme(y){
+  let eur = 0; const nowD = new Date();
+  Object.keys(S.days).forEach(s => { if(+s.slice(0,4) === y && S.days[s].st === 'gearbeitet'){ eur += calcTag(s, S.days[s], nowD).eur; } });
+  return Math.round(eur*100)/100;
+}
+
+/* ---------- Seite: Mehr ---------- */
+function pMehr(){
+  kopf('Mehr', 'Einstellungen, Stundenzettel und Sicherung');
+  const st = S.set;
+  const monate = [...new Set(Object.keys(S.days).filter(s => S.days[s].st === 'gearbeitet').map(s => s.slice(0,7)))].sort().reverse();
+  const jetzt = heute().slice(0,7); if(!monate.includes(jetzt)) monate.unshift(jetzt);
+  let h = `<section class="card"><div class="l">Ich</div>
+    <div class="feld"><label for="f_name">Name</label><input id="f_name" data-f="name" value="${esc(st.name)}" autocomplete="name" placeholder="Vor- und Nachname"></div>
+    <div class="feld"><label for="f_firma">Arbeitgeber / Filiale</label><input id="f_firma" data-f="firma" value="${esc(st.firma)}" placeholder="optional"></div>
+    <div class="feld"><label for="f_persnr">Personalnummer</label><input id="f_persnr" data-f="persnr" value="${esc(st.persnr)}" placeholder="optional – steht auf dem Stundenzettel"></div></section>`;
+  h += `<section class="card"><div class="l">Stundenlohn</div><div class="seg" style="margin-top:10px"><button data-a="lohnModus" data-v="min" class="${st.lohnModus==='min'?'on':''}">Mindestlohn</button><button data-a="lohnModus" data-v="eigen" class="${st.lohnModus==='eigen'?'on':''}">eigener Lohn</button></div>`;
+  if(st.lohnModus === 'min') h += `<div class="u" style="margin-top:8px">Geht automatisch mit: ${MINDESTLOHN.filter(x => x[0] >= '2026').map(x => fE(x[1]) + ' ab ' + datumZahl(x[0])).join(' · ')}. Jetzt: <b style="color:var(--tx)">${fE(lohnAm(heute()))}</b></div>`;
+  else {
+    st.lohn.forEach((x, i) => { h += `<div class="lohnzeile"><input type="date" data-li="${i}" data-lf="ab" value="${esc(x.ab)}" aria-label="gilt ab"><input inputmode="decimal" data-li="${i}" data-lf="eur" value="${x.eur != null ? fZ(x.eur) : ''}" aria-label="Euro pro Stunde"><button class="x" data-a="lohnWeg" data-i="${i}" aria-label="Zeile löschen">×</button></div>`; });
+    h += `<div class="chips"><button data-a="lohnNeu">+ neuer Lohn ab …</button></div><div class="u">Links: gilt ab · rechts: Euro pro Stunde. Jetzt: <b style="color:var(--tx)">${fE(lohnAm(heute()))}</b></div>`;
+  }
+  h += `</section><section class="card"><div class="l">Minijob</div>
+    <div class="feld"><label>Rentenversicherung</label><div class="seg"><button data-a="rv" data-v="1" class="${st.rv?'on':''}">zahle ich (3,6 %)</button><button data-a="rv" data-v="0" class="${!st.rv?'on':''}">befreit</button></div></div>
+    <div class="u" style="margin-top:8px">Grenze: ${GRENZE.filter(x => x[0] >= '2026').map(x => fE(x[1]) + ' im Monat ab ' + x[0].slice(0,4)).join(' · ')}.</div>
+    <div class="schalter" style="margin-top:12px"><div class="t">Pause automatisch abziehen<small>über 6 Std. 30 Min., über 9 Std. 45 Min.</small></div><button class="sw ${st.pauseAuto?'on':''}" data-a="pauseAuto" aria-label="Pause automatisch"></button></div>
+    <div class="feld"><label for="f_land">Bundesland (für Feiertage)</label><select id="f_land" data-f="land">${Object.entries(LAENDER).map(([k, v]) => `<option value="${k}" ${k===st.land?'selected':''}>${v}</option>`).join('')}</select></div></section>`;
+  h += `<section class="card"><div class="l">Ansicht</div><div class="seg" style="margin-top:10px">${[['auto','Automatisch'],['hell','Hell'],['dunkel','Dunkel']].map(([k, v]) => `<button data-a="theme" data-v="${k}" class="${st.theme===k?'on':''}">${v}</button>`).join('')}</div></section>`;
+  h += `<section class="card"><div class="l">Stundenzettel</div><div class="feld"><label for="f_zm">Monat</label><select id="f_zm">${monate.map(x => `<option value="${x}">${MON[+x.slice(5)-1]} ${x.slice(0,4)}</option>`).join('')}</select></div>
+    <button class="gb zweit" data-a="zettel">Stundenzettel anzeigen</button></section>`;
+  h += `<section class="card"><div class="l">Daten und Sicherung</div><div class="u" style="margin-top:6px">Alles liegt nur auf diesem Gerät – kein Konto, kein Server. ${S.backup ? 'Letzte Sicherung: ' + datumZahl(S.backup.slice(0,10)) + '.' : 'Noch keine Sicherung gespeichert.'}</div>
+    <div class="knopfreihe"><button class="zk" data-a="sichern">Sicherung speichern<small>Datei in „Dateien“, iCloud oder per Mail an dich</small></button>
+    <button class="zk" data-a="laden">Sicherung laden<small>z. B. auf einem neuen Handy</small></button>
+    <button class="zk" data-a="csv">Als Excel-Liste teilen<small>CSV-Datei mit allen Tagen</small></button>
+    <button class="zk rot" data-a="allesWeg">Alles löschen</button></div></section>`;
+  h += `<p class="klein" style="margin:4px 4px 0">Zeiterfassung ${VERSION} · Auf dem iPhone: in Safari öffnen → Teilen → „Zum Home-Bildschirm“. Dann startet sie wie eine App und geht auch ohne Internet.</p>`;
+  $('seite').innerHTML = h;
+}
+
+/* ---------- Sheets ---------- */
+let sheetZu = null, sheetFest = false;
+function sheetAuf(html, opts){
+  opts = opts || {};
+  const sh = $('sheet'), sl = $('schleier');
+  sh.innerHTML = '<div class="griff"></div>' + html;
+  sh.hidden = false; sl.hidden = false; sheetFest = !!opts.fest; sheetZu = opts.zu || null;
+  requestAnimationFrame(() => { sh.classList.add('auf'); sl.classList.add('auf'); });
+  sh.scrollTop = 0;
+}
+function sheetSchliessen(){
+  const sh = $('sheet'), sl = $('schleier');
+  sh.classList.remove('auf'); sl.classList.remove('auf');
+  setTimeout(() => { if(!sh.classList.contains('auf')){ sh.hidden = true; sl.hidden = true; sh.innerHTML = ''; } }, 260);
+  if(sheetZu){ const f = sheetZu; sheetZu = null; f(); }
+}
+$('schleier').addEventListener('click', () => { if(!sheetFest) sheetSchliessen(); });
+
+/* Einstempeln */
+function sheetEin(){
+  const s = heute(), t = S.days[s], an = anlass(s);
+  const plan = t && t.st === 'geplant' && t.sh.length ? t.sh[0].b : null;
+  sheetAuf(`<div class="sk"><h2>Einstempeln<small>${datumLang(s)}${an ? ' · <span class="an">' + esc(an.n) + '</span>' : ''}</small></h2><button class="zu" data-a="zu">Abbrechen</button></div>
+    <div class="klein" style="margin-top:4px">Wann hast du angefangen? Stimmt „jetzt“ nicht, einfach ändern.</div>
+    <div class="zeitgross" style="margin-top:10px"><input type="time" id="ez" value="${jetztHM()}"></div>
+    <div class="chips"><button data-a="zset" data-z="ez" data-v="jetzt">jetzt</button><button data-a="zplus" data-z="ez" data-v="-5">− 5 Min.</button><button data-a="zplus" data-z="ez" data-v="-15">− 15 Min.</button>${plan ? `<button data-a="zset" data-z="ez" data-v="${plan}">Plan ${plan}</button>` : ''}</div>
+    <div class="feld"><label for="et">Tätigkeit (optional)</label><input id="et" value="${esc((t && t.t) || S.set.taet || '')}" placeholder="z. B. Kasse, Verkauf, Lager"></div>
+    ${plan ? `<div class="u" style="margin-top:8px">Heute geplant: ${esc(schichtText(t))}</div>` : ''}
+    <div class="sfuss"><button class="gb" data-a="einOk">Einstempeln</button></div>`);
+}
+function einstempeln(hm, taet){
+  const s = heute(); let d = S.days[s];
+  if(!d || d.st !== 'gearbeitet'){
+    const plan = d && d.st === 'geplant' && d.sh && d.sh.length ? {b:d.sh[0].b, e:d.sh[d.sh.length-1].e} : null;
+    d = {st:'gearbeitet', sh:[], p:'', t:(d && d.t) || '', n:(d && d.n) || ''};
+    if(plan) d.plan = plan;
+  }
+  d.sh = (d.sh || []).filter(x => x.b && x.e);
+  d.sh.push({b:hm, e:null});
+  if(taet) d.t = taet;
+  S.days[s] = d; S.run = {d:s, i:d.sh.length-1}; if(taet) S.set.taet = taet;
+  speichern();
+  if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+}
+/* Ausstempeln */
+function sheetAus(){
+  const rd = S.run.d, td = S.days[rd], sh = td.sh[S.run.i];
+  const plan = td.plan && td.plan.e;
+  sheetAuf(`<div class="sk"><h2>Ausstempeln<small>${datumLang(rd)} · seit ${sh.b} Uhr</small></h2><button class="zu" data-a="zu">Abbrechen</button></div>
+    <div class="klein" style="margin-top:4px">Wann hast du aufgehört? Vergessen zu stempeln? Einfach die richtige Uhrzeit wählen.</div>
+    <div class="zeitgross" style="margin-top:10px"><input type="time" id="az" value="${tageZwischen(rd, heute()) === 0 || !plan ? jetztHM() : plan}"></div>
+    <div class="chips"><button data-a="zset" data-z="az" data-v="jetzt">jetzt</button><button data-a="zplus" data-z="az" data-v="-5">− 5 Min.</button><button data-a="zplus" data-z="az" data-v="5">+ 5 Min.</button>${plan ? `<button data-a="zset" data-z="az" data-v="${plan}">Plan ${plan}</button>` : ''}</div>
+    <div id="aRes"></div>
+    <div class="sfuss"><button class="gb rot" data-a="ausOk">Ausstempeln</button></div>`);
+  ausVorschau();
+}
+function ausVorschau(){
+  const el = $('aRes'); if(!el || !S.run) return;
+  const rd = S.run.d, td = JSON.parse(JSON.stringify(S.days[rd]));
+  td.sh[S.run.i].e = $('az').value || jetztHM();
+  const merk = S.run; S.run = null;
+  const r = calcVoll(rd, td); S.run = merk;
+  el.innerHTML = rechnungHtml(r, td) + (r.w.length ? `<div style="margin-top:8px">${hinweisListe(r.w)}</div>` : '');
+}
+function rechnungHtml(r, t){
+  if(!r.segs.length) return '';
+  const p = (t.p != null && t.p !== '') ? +t.p || 0 : 0;
+  let pt = 'Pause';
+  if(r.auto) pt = 'Pause (automatisch)'; else if(r.G && p) pt = 'Pause (Lücke + eigene)'; else if(r.G) pt = 'Pause (Lücke zwischen Schichten)'; else if(p) pt = 'Pause (eingetragen)';
+  return `<div class="calc"><div><span>Anwesend ${minHm(r.segs[0][0])}–${minHm(r.segs[r.segs.length-1][1])}</span><span>${fH(r.S)} Std.</span></div>
+    <div><span>${pt}</span><span>− ${fH(r.B)} Std.</span></div>
+    <div><span>Arbeitszeit</span><span>${fH(r.A)} Std.</span></div>
+    <div><span>Stundenlohn</span><span>${fE(r.rate)}</span></div>
+    <div class="sum"><span>${r.st === 'geplant' ? 'Brutto (geplant)' : 'Brutto'}</span><span>${fE(r.eur)}</span></div></div>`;
+}
+/* Beginn ändern */
+function sheetBeginn(){
+  const td = S.days[S.run.d], sh = td.sh[S.run.i];
+  sheetAuf(`<div class="sk"><h2>Beginn ändern<small>${datumLang(S.run.d)}</small></h2><button class="zu" data-a="zu">Abbrechen</button></div>
+    <div class="zeitgross" style="margin-top:10px"><input type="time" id="bz" value="${sh.b}"></div>
+    <div class="chips"><button data-a="zplus" data-z="bz" data-v="-5">− 5 Min.</button><button data-a="zplus" data-z="bz" data-v="5">+ 5 Min.</button></div>
+    <div class="sfuss"><button class="gb" data-a="beginnOk">Übernehmen</button></div>`);
+}
+/* Tag bearbeiten */
+let ed = null, edS = null;
+function sheetTag(s){
+  edS = s;
+  const vorh = S.days[s];
+  ed = vorh ? JSON.parse(JSON.stringify(vorh)) : {st:(s > heute() ? 'geplant' : 'gearbeitet'), sh:[{b:'', e:''}], p:'', t:S.set.taet || '', n:''};
+  if((ed.st === 'gearbeitet' || ed.st === 'geplant') && (!ed.sh || !ed.sh.length)) ed.sh = [{b:'', e:''}];
+  tagRender();
+}
+function tagRender(){
+  const s = edS, an = anlass(s), vorh = !!S.days[s], laeuft = S.run && S.run.d === s;
+  const arbeit = ed.st === 'gearbeitet' || ed.st === 'geplant';
+  let h = `<div class="sk"><h2>${datumLang(s)}<small>${an ? '<span class="an">' + esc(an.n) + '</span> · ' : ''}KW ${kw(s)}</small></h2><button class="zu" data-a="zu">Schließen</button></div>
+    <div class="seg" style="margin-top:8px">${Object.entries(STATUS).map(([k, v]) => `<button data-a="edSt" data-v="${k}" class="${ed.st===k?'on':''}">${v}</button>`).join('')}</div>`;
+  if(arbeit){
+    ed.sh.forEach((x, i) => {
+      const offen = laeuft && S.run.i === i && !x.e;
+      h += `<div class="schicht"><div class="feld"><label>${ed.sh.length > 1 ? (i+1) + '. ' : ''}Beginn</label><input type="time" data-sh="${i}" data-k="b" value="${esc(x.b)}"></div>
+        <div class="feld"><label>Ende</label>${offen ? '<div class="lauftxt">läuft …</div>' : `<input type="time" data-sh="${i}" data-k="e" value="${esc(x.e || '')}">`}</div>
+        ${ed.sh.length > 1 && !offen ? `<button class="x" data-a="shWeg" data-i="${i}" aria-label="Schicht löschen">×</button>` : '<span></span>'}</div>`;
+    });
+    h += `<div class="chips"><button data-a="shNeu">+ zweite Schicht</button></div>
+      <div class="feld"><label for="ep">Eigene Pause in Minuten (leer = automatisch)</label><input id="ep" inputmode="numeric" data-k="p" value="${esc(ed.p == null ? '' : ed.p)}" placeholder="${S.set.pauseAuto ? 'automatisch nach Gesetz' : 'keine'}"></div>
+      <div class="feld"><label for="eta">Tätigkeit</label><input id="eta" data-k="t" value="${esc(ed.t || '')}" placeholder="z. B. Kasse, Verkauf, Lager"></div>`;
+  }
+  h += `<div class="feld"><label for="en">Notiz</label><input id="en" data-k="n" value="${esc(ed.n || '')}" placeholder="optional"></div><div id="edRes"></div>
+    <div class="sfuss"><button class="gb" data-a="edOk">Speichern</button></div>
+    ${vorh && !laeuft ? '<div class="zeile"><button class="lb" data-a="edWeg" style="color:var(--er)">Tag löschen</button></div>' : ''}`;
+  if(laeuft) h += '<div class="u" style="margin-top:10px">Die Schicht läuft noch. Beenden mit „Ausstempeln“ auf der Seite Heute.</div>';
+  const sh = $('sheet');
+  if(sh.classList.contains('auf') && sh.querySelector('.sk')) { sh.innerHTML = '<div class="griff"></div>' + h; } else sheetAuf(h);
+  tagVorschau();
+}
+function tagVorschau(){
+  const el = $('edRes'); if(!el) return;
+  if(!(ed.st === 'gearbeitet' || ed.st === 'geplant')){ el.innerHTML = ''; return; }
+  const r = calcVoll(edS, ed);
+  el.innerHTML = rechnungHtml(r, ed) + (r.w.length ? `<div style="margin-top:8px">${hinweisListe(r.w)}</div>` : '');
+}
+function kw(s){ const d = dIso(s); const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - n); const j = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - j) / 86400000 + 1) / 7); }
+function tagSpeichern(){
+  const s = edS, laeuft = S.run && S.run.d === s;
+  const x = JSON.parse(JSON.stringify(ed));
+  if(laeuft && x.st !== 'gearbeitet'){ toast('Die Schicht läuft noch – erst ausstempeln'); return; }
+  if(x.st === 'gearbeitet' || x.st === 'geplant'){
+    x.sh = x.sh.filter((z, i) => z.b || (laeuft && S.run.i === i));
+    for(let i = 0; i < x.sh.length; i++){
+      const z = x.sh[i], offen = laeuft && S.run.i === i && !z.e;
+      if(!z.b){ toast('Bitte Beginn eintragen'); return; }
+      if(!z.e && !offen){ toast('Bitte Ende eintragen'); return; }
+    }
+    if(!x.sh.length){ toast('Bitte Beginn und Ende eintragen'); return; }
+    if(x.p !== '' && x.p != null){ const n = parseInt(x.p, 10); x.p = isNaN(n) ? '' : Math.max(0, n); }
+  } else {
+    if(laeuft){ toast('Die Schicht läuft noch – erst ausstempeln'); return; }
+    x.sh = []; x.p = '';
+  }
+  if(laeuft){ const idx = x.sh.findIndex(z => !z.e); S.run.i = idx >= 0 ? idx : S.run.i; }
+  S.days[s] = x; speichern(); sheetSchliessen(); toast('Gespeichert'); zeige();
+}
+
+/* ---------- Stundenzettel ---------- */
+function zettel(ym){
+  const y = +ym.slice(0,4), m = +ym.slice(5,7) - 1, mo = monat(y, m), st = S.set;
+  const rows = mo.rows.filter(([s, d, r]) => d.st === 'gearbeitet' && r.A > 0 && !r.offen);
+  const lohnSaetze = [...new Set(rows.map(x => x[2].rate))];
+  const netto = st.rv ? Math.round(mo.eur*(1-RV_SATZ)*100)/100 : mo.eur;
+  let h = `<div class="zl"><button data-a="zettelZu">Schließen</button><button class="p" data-a="drucken">Drucken / als PDF</button></div><div class="blatt">
+    <div class="bk"><div><h3>Stundennachweis</h3><div class="bs">${MON[m]} ${y}${sessionVon(ym + '-15') != null ? ' · Karnevals-Session ' + sessionBereich(sessionVon(ym + '-15')).name : ''}</div></div>
+    <div class="zr">Zeitraum<b>01.${pad(m+1)}. – ${new Date(y, m+1, 0).getDate()}.${pad(m+1)}.${y}</b></div></div>
+    <div class="bd"><div><span>Name</span>${esc(st.name) || '–'}</div><div><span>Arbeitgeber</span>${esc(st.firma) || '–'}</div>
+    <div><span>Personalnummer</span>${esc(st.persnr) || '–'}</div><div><span>Beschäftigung</span>Minijob</div>
+    <div><span>Stundenlohn</span>${lohnSaetze.length ? lohnSaetze.map(fE).join(' / ') : fE(lohnAm(ym + '-15'))}</div><div><span>Pausen</span>${st.pauseAuto ? 'nach § 4 Arbeitszeitgesetz' : 'wie eingetragen'}</div></div>
+    <table><tr><th>Datum</th><th>Tag</th><th>Zeiten</th><th class="r">Pause</th><th class="r">Arbeitszeit</th><th>Tätigkeit / Bemerkung</th><th class="r">Brutto</th></tr>`;
+  let B = 0;
+  rows.forEach(([s, d, r]) => {
+    const an = anlass(s); B += r.B;
+    h += `<tr><td>${datumZahl(s)}</td><td>${WT[dIso(s).getDay()]}</td><td>${esc(schichtText(d))}</td><td class="r">${fH(r.B)}</td><td class="r">${fH(r.A)}</td>
+      <td>${esc(d.t || '')}${d.n ? ' · ' + esc(d.n) : ''}${an ? ' <span class="ka">' + esc(an.n) + '</span>' : ''}</td><td class="r">${fE(r.eur)}</td></tr>`;
+  });
+  if(!rows.length) h += `<tr><td colspan="7" style="color:#69707A">In diesem Monat ist keine abgeschlossene Schicht eingetragen.</td></tr>`;
+  h += `<tr class="sum"><td colspan="3">Summe · ${rows.length} ${rows.length===1?'Arbeitstag':'Arbeitstage'}</td><td class="r">${fH(B)}</td><td class="r">${fH(mo.A)}</td><td></td><td class="r">${fE(mo.eur)}</td></tr></table>
+    <div class="bh"><div><b>ZUSAMMENSETZUNG</b>Arbeitszeit ${fH(mo.A)} Std. · Brutto ${fE(mo.eur)}<br>Netto geschätzt ${fE(netto)}${st.rv ? ' (minus 3,6 % Rentenversicherung)' : ''}</div>
+    <div><b>HINWEISE</b>Minijob-Grenze ${y}: ${fE(mo.grenze)} im Monat – ${mo.eur > mo.grenze ? 'überschritten um ' + fE(mo.eur - mo.grenze) : 'eingehalten'}.<br>${rows.some(x => x[2].A > 600) ? 'Achtung: Schicht über 10 Stunden.' : 'Keine Schicht über 10 Stunden.'}</div></div>
+    <div class="uz"><div>Datum, Unterschrift Mitarbeiter/in</div><div>Datum, Unterschrift Arbeitgeber</div></div>
+    <div class="bf"><span>Erstellt am ${datumZahl(heute())} ${jetztHM()} mit der Zeiterfassung</span><span>Seite 1</span></div></div>`;
+  const z = $('zettel'); z.innerHTML = h; z.hidden = false; z.scrollTop = 0; zettelZoom();
+}
+// Auf dem Handy das A4-Blatt auf Bildschirmbreite verkleinern (zum Drucken wieder 100 %)
+function zettelZoom(){ const z = $('zettel'), bl = z.querySelector('.blatt'); if(!bl) return; bl.style.zoom = Math.min(1, (z.clientWidth - 20) / 760); }
+window.addEventListener('resize', () => { if(!$('zettel').hidden) zettelZoom(); });
+
+/* ---------- Sicherung ---------- */
+async function teilen(name, text, typ){
+  const blob = new Blob([text], {type:typ});
+  try{
+    const file = new File([blob], name, {type:typ});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); return true; }
+  }catch(e){ if(e && e.name === 'AbortError') return false; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000);
+  return true;
+}
+function csvText(){
+  const z = [['Datum','Tag','Status','Beginn','Ende','Beginn 2','Ende 2','Pause (Min.)','Arbeitszeit (Std.)','Lohn/Std.','Brutto','Tätigkeit','Notiz','Anlass']];
+  Object.keys(S.days).sort().forEach(s => {
+    const d = S.days[s], r = calcTag(s, d), sh = d.sh || [], an = anlass(s);
+    z.push([datumZahl(s), WT[dIso(s).getDay()], STATUS[d.st], (sh[0]||{}).b||'', (sh[0]||{}).e||'', (sh[1]||{}).b||'', (sh[1]||{}).e||'',
+      r.segs.length ? String(r.B) : '', r.segs.length ? fZ(r.A/60) : '', r.segs.length ? fZ(r.rate) : '', r.segs.length ? fZ(r.eur) : '', d.t||'', d.n||'', an ? an.n : '']);
+  });
+  return '﻿' + z.map(r => r.map(v => /[;"\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v).join(';')).join('\r\n');
+}
+
+/* ---------- Ersteinrichtung ---------- */
+function sheetWillkommen(){
+  sheetAuf(`<div class="sk"><h2>Willkommen<small>Zeiterfassung für deinen Minijob</small></h2></div>
+    <div class="klein">Stempel ein und aus – Pausen, Arbeitszeit und Geld rechnet die App selbst. Alles bleibt nur auf diesem Gerät.</div>
+    <div class="feld"><label for="w_name">Dein Name</label><input id="w_name" placeholder="für den Stundenzettel" autocomplete="name"></div>
+    <div class="feld"><label for="w_firma">Arbeitgeber / Filiale</label><input id="w_firma" placeholder="optional"></div>
+    <div class="feld"><label>Stundenlohn</label><div class="seg"><button data-a="wLohn" data-v="min" class="on">Mindestlohn</button><button data-a="wLohn" data-v="eigen">anderer Lohn</button></div></div>
+    <div class="feld" id="w_eigen" hidden><label for="w_eur">Euro pro Stunde</label><input id="w_eur" inputmode="decimal" placeholder="z. B. 15,00"></div>
+    <div class="u" id="w_min">${fE(lohnAm('2026-06-01'))} ab 01.01.2026, ${fE(14.60)} ab 01.01.2027 – geht automatisch mit.</div>
+    <div class="feld"><label for="w_land">Bundesland (für Feiertage)</label><select id="w_land">${Object.entries(LAENDER).map(([k, v]) => `<option value="${k}" ${k==='NW'?'selected':''}>${v}</option>`).join('')}</select></div>
+    <div class="sfuss"><button class="gb" data-a="wOk">Los geht's</button></div>`, {fest:true});
+}
+
+/* ---------- Ereignisse ---------- */
+document.addEventListener('click', ev => {
+  const tb = ev.target.closest('#tabs button'); if(tb){ zeige(tb.dataset.tab); return; }
+  const el = ev.target.closest('[data-a]'); if(!el) return;
+  const a = el.dataset.a, v = el.dataset.v;
+  switch(a){
+    case 'zu': sheetSchliessen(); break;
+    case 'ein': sheetEin(); break;
+    case 'einOk': { const hm = $('ez').value || jetztHM(); if(hmMin(hm) == null){ toast('Bitte Uhrzeit wählen'); break; } einstempeln(hm, $('et').value.trim()); sheetSchliessen(); toast('Eingestempelt um ' + hm); zeige(); break; }
+    case 'aus': if(S.run) sheetAus(); break;
+    case 'ausOk': {
+      if(!S.run) break;
+      const hm = $('az').value || jetztHM(), td = S.days[S.run.d];
+      td.sh[S.run.i].e = hm; const rd = S.run.d; S.run = null; speichern();
+      const r = calcTag(rd, td); sheetSchliessen(); toast('Ausgestempelt · ' + fH(r.A) + ' Std. · ' + fE(r.eur)); zeige(); break; }
+    case 'beginn': if(S.run) sheetBeginn(); break;
+    case 'beginnOk': { const hm = $('bz').value; if(hm && S.run){ S.days[S.run.d].sh[S.run.i].b = hm; speichern(); } sheetSchliessen(); zeige(); break; }
+    case 'zset': { const inp = $(el.dataset.z); inp.value = v === 'jetzt' ? jetztHM() : v; inp.dispatchEvent(new Event('input', {bubbles:true})); break; }
+    case 'zplus': { const inp = $(el.dataset.z); const m = hmMin(inp.value || jetztHM()); inp.value = minHm(m + (+v)); inp.dispatchEvent(new Event('input', {bubbles:true})); break; }
+    case 'tag': sheetTag(el.dataset.d); break;
+    case 'edSt': ed.st = v; if((v === 'gearbeitet' || v === 'geplant') && (!ed.sh || !ed.sh.length)) ed.sh = [{b:'', e:''}]; tagRender(); break;
+    case 'shNeu': ed.sh.push({b:'', e:''}); tagRender(); break;
+    case 'shWeg': ed.sh.splice(+el.dataset.i, 1); tagRender(); break;
+    case 'edOk': tagSpeichern(); break;
+    case 'edWeg': if(confirm('Diesen Tag wirklich löschen?')){ delete S.days[edS]; speichern(); sheetSchliessen(); toast('Gelöscht'); zeige(); } break;
+    case 'kprev': kalM--; if(kalM < 0){ kalM = 11; kalY--; } zeige(); break;
+    case 'knext': kalM++; if(kalM > 11){ kalM = 0; kalY++; } zeige(); break;
+    case 'kheute': { const d = new Date(); kalY = d.getFullYear(); kalM = d.getMonth(); zeige(); break; }
+    case 'sess': uebSess = +v; zeige(); break;
+    case 'tabMehr': zeige('mehr'); break;
+    case 'lohnModus': S.set.lohnModus = v; if(v === 'eigen' && !S.set.lohn.length) S.set.lohn = [{ab:'2026-01-01', eur:13.90}]; speichern(); zeige(); break;
+    case 'lohnNeu': S.set.lohn.push({ab:heute(), eur:lohnAm(heute())}); speichern(); zeige(); break;
+    case 'lohnWeg': S.set.lohn.splice(+el.dataset.i, 1); speichern(); zeige(); break;
+    case 'rv': S.set.rv = v === '1'; speichern(); zeige(); break;
+    case 'pauseAuto': S.set.pauseAuto = !S.set.pauseAuto; speichern(); zeige(); break;
+    case 'theme': S.set.theme = v; speichern(); themaAnwenden(); zeige(); break;
+    case 'zettel': zettel($('f_zm').value); break;
+    case 'zettelZu': $('zettel').hidden = true; break;
+    case 'drucken': window.print(); break;
+    case 'sichern': {
+      const name = 'Zeiterfassung-Sicherung-' + heute() + '.json';
+      teilen(name, JSON.stringify(S, null, 1), 'application/json').then(ok => { if(ok){ S.backup = new Date().toISOString(); speichern(); zeige(); toast('Sicherung erstellt'); } });
+      break; }
+    case 'laden': $('datei').value = ''; $('datei').click(); break;
+    case 'csv': teilen('Zeiterfassung-' + heute() + '.csv', csvText(), 'text/csv'); break;
+    case 'allesWeg':
+      if(confirm('Wirklich ALLE Zeiten und Einstellungen löschen?') && confirm('Sicher? Das lässt sich nicht rückgängig machen.')){
+        localStorage.removeItem(KEY); S = neu(); speichern(); themaAnwenden(); zeige('heute'); sheetWillkommen(); }
+      break;
+    case 'wLohn': {
+      el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el));
+      $('w_eigen').hidden = v !== 'eigen'; $('w_min').hidden = v === 'eigen'; break; }
+    case 'wOk': {
+      S.set.name = $('w_name').value.trim(); S.set.firma = $('w_firma').value.trim(); S.set.land = $('w_land').value;
+      const eigen = !$('w_eigen').hidden;
+      if(eigen){ const e = zahl($('w_eur').value); if(e == null || e <= 0){ toast('Bitte Stundenlohn eintragen'); break; } S.set.lohnModus = 'eigen'; S.set.lohn = [{ab:'2020-01-01', eur:e}]; }
+      else S.set.lohnModus = 'min';
+      S.setup = true; speichern(); sheetSchliessen(); zeige(); break; }
+  }
+});
+document.addEventListener('input', ev => {
+  const t = ev.target;
+  if(t.id === 'az'){ ausVorschau(); return; }
+  if(t.dataset.sh != null){ ed.sh[+t.dataset.sh][t.dataset.k] = t.value; tagVorschau(); return; }
+  if(t.dataset.k && ed && $('sheet').contains(t)){ ed[t.dataset.k] = t.value; if(t.dataset.k === 'p') tagVorschau(); return; }
+});
+document.addEventListener('change', ev => {
+  const t = ev.target;
+  if(t.dataset.f){ S.set[t.dataset.f] = t.value.trim(); speichern(); if(t.dataset.f === 'land') zeige(); else toast('Gespeichert'); return; }
+  if(t.dataset.li != null){
+    const x = S.set.lohn[+t.dataset.li]; if(!x) return;
+    if(t.dataset.lf === 'ab') x.ab = t.value; else { const n = zahl(t.value); if(n == null){ toast('Bitte Betrag wie 13,90 eingeben'); return; } x.eur = n; }
+    speichern(); zeige(); return;
+  }
+});
+$('datei').addEventListener('change', ev => {
+  const f = ev.target.files && ev.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try{
+      const x = JSON.parse(rd.result);
+      if(!x || x.v !== 1 || typeof x.days !== 'object') throw new Error('falsches Format');
+      const n = Object.keys(x.days).length;
+      if(!confirm('Sicherung mit ' + n + ' Tagen laden? Die Daten auf diesem Gerät werden ersetzt.')) return;
+      const neuS = neu(); x.set = Object.assign(neuS.set, x.set || {}); S = x; S.setup = true; speichern(); themaAnwenden(); zeige(); toast('Sicherung geladen');
+    }catch(e){ toast('Das ist keine Sicherung dieser App'); }
+  };
+  rd.readAsText(f);
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themaAnwenden);
+
+/* ---------- Start ---------- */
+themaAnwenden();
+zeige();
+if(!S.setup) sheetWillkommen();
+if('serviceWorker' in navigator && /^https?:/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+window.ZE = {get S(){ return S; }, set S(v){ S = v; }, calcTag, calcVoll, monat, feiertage, karneval, ostern, sessionVon, lohnAm, zeige, speichern, csvText};
+</script>
+</body>
+</html>
